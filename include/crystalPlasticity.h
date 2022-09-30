@@ -199,6 +199,9 @@ public:
               */
               FullMatrix<double> T;
 
+              // Cauchy stress from resolve shear stress *by xhf
+              // FullMatrix<double> TestCauchyStress;              
+
               /**
               * First Piola-Kirchhoff stress
               */
@@ -224,6 +227,26 @@ public:
               * volume averaged global Lagrangian strain
               */
               FullMatrix<double> global_strain;
+
+              /**
+              * volume weighted variables per core by xhf
+              */
+              double local_strain_eqv;	// eqv-strain
+              double local_stress_eqv;	// von-mises
+              double local_plastic_strain_eqv;	// eqv plastic strain
+              double local_Wp_b;		// plastic work of backstress
+              double local_Wp_f;		// plastic work of friction stress
+              double local_Wp;			// plastic work
+
+              /**
+              * volume averaged global variables per core by xhf
+              */
+              double global_strain_eqv;	// eqv-strain
+              double global_stress_eqv;	// von-mises
+              double global_plastic_strain_eqv;	// eqv plastic strain
+              double global_Wp_b;		// plastic work of backstress
+              double global_Wp_f;		// plastic work of friction stress
+              double global_Wp;			// plastic work
 
               /**
               * Tangent modulus dPK1/dF
@@ -275,7 +298,18 @@ public:
 
               std::vector< std::vector< FullMatrix<double> > > TinterStress;
 
-	      std::vector< std::vector< FullMatrix<double> > > TinterStress_diff;
+	            std::vector< std::vector< FullMatrix<double> > > TinterStress_diff;
+
+              // vonmises stress by element number and quadratureID at each increment *by xhf
+              std::vector< std::vector< double > > vonmises_Stress;
+
+              // eqv strain by element number and quadratureID at each increment *by xhf
+              std::vector< std::vector< double > > eqv_strain;
+
+              // plastic work by element number and quadratureID at each increment *by xhf
+              std::vector< std::vector< double > > Wp;    //Total plastic work
+              std::vector< std::vector< double > > Wp_F;  //Plastic work of Firction stress
+              std::vector< std::vector< double > > Wp_B;  //plastic work of back stress
 
 
               /**
@@ -288,7 +322,7 @@ public:
               std::vector<std::vector<  Vector<double> > >  W_kh_conv, W_kh_iter;
               Vector<double> Wkh_tau;
 
-	      FullMatrix<double> T_inter ;
+	            FullMatrix<double> T_inter ;
               /**
               * Stores state variables by element number and quadratureID
               */

@@ -31,6 +31,9 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
     FullMatrix<double> FE_t(dim,dim),FP_t(dim,dim),F_t(dim,dim);  //Elastic, Plastic, and total deformation gradient
     Vector<double> s_alpha_t(n_Tslip_systems),slipfraction_t(n_slip_systems),twinfraction_t(n_twin_systems); // Slip resistance
     Vector<double> W_kh_t(n_Tslip_systems),W_kh_t1(n_Tslip_systems),W_kh_t2(n_Tslip_systems),signed_slip_t(n_Tslip_systems) ;
+    // used to calculate the plastic work of back stress and friction stress **by xhf
+    Vector<double> backstress_t(n_Tslip_systems), frictionstress_t(n_Tslip_systems), shearStress_t(n_Tslip_systems);
+
     Vector<double> rot1(dim);// Crystal orientation (Rodrigues representation)
     FullMatrix<double> Tinter_diff_guess(dim,dim), Ep_t (dim,dim), iMinusL (dim,dim);
     double Ep_eff_cum_t;
@@ -237,6 +240,11 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
     W_kh_tau = 0.0 ;
     W_kh_tau.add(1.0,W_kh_t1,1.0,W_kh_t2) ;
     W_kh_tau_it = W_kh_tau ;
+
+    // initiation the backstress *by xhf
+    for(unsigned int i=0 ; i<n_slip_systems ; i++){
+      backstress_t(i) = W_kh_tau(i) ; 
+    }     
 
     slipfraction_tau = slipfraction_t ;
     signed_slip_tau  = signed_slip_t;
@@ -1159,6 +1167,24 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
     stateVar_iter[cellID][quadPtID][dim*dim+4*n_Tslip_systems]=Ep_eff_cum_tau;
 
 
+    // // calculate the cauchy stress form resolved shear stress *by xhf
+    // if(cellID == 3 && quadPtID == 0){
+    //   TestCauchyStress = 0.0;
+
+    //   for (unsigned int i = 0;i<n_Tslip_systems;i++){
+    //     temp7=0.0;
+    //     for (unsigned int j = 0;j < dim;j++) {
+    //       for (unsigned int k = 0;k < dim;k++) {
+    //         temp7[j][k]=SCHMID_TENSOR1[dim*i + j][k];
+    //       }
+    //     }
+    //     for (unsigned int j = 0;j < dim;j++) {
+    //       for (unsigned int k = 0;k < dim;k++) {
+    //         TestCauchyStress[j][k] = TestCauchyStress[j][k] + resolved_shear_tau(i)*0.5*(temp7[j][k]+temp7[k][j]);
+    //       }
+    //     }
+    //   }
+    // }
 
     for(unsigned int i=0 ; i<n_twin_systems ; i++)
     twinfraction_iter[cellID][quadPtID][i]=twinfraction_tau(i);
@@ -1166,6 +1192,14 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
     for(unsigned int i=0 ; i<n_slip_systems ; i++)
     slipfraction_iter[cellID][quadPtID][i]=slipfraction_tau(i);
 
+    // calculate the plastic work of total, backstress and friction stress  **by xhf
+    for(unsigned int i=0 ; i<n_slip_systems ; i++){
+      Wp_B[cellID][quadPtID] = Wp_B[cellID][quadPtID] + 0.5*(W_kh_tau(i) + backstress_t(i))*delgam_tau(i);
+      Wp_F[cellID][quadPtID] = Wp_F[cellID][quadPtID] + 0.5*fabs((sres_tau(i) + frictionstress_t(i))*delgam_tau(i));
+      Wp[cellID][quadPtID] = Wp[cellID][quadPtID] + 0.5*(2*resolved_shear_tau(i))*delgam_tau(i);
+    }
+
+    
     if (this->userInputs.flagTaylorModel){
       F=F_tau; // Updating Deformation Gradient if it is Taylor model
     }

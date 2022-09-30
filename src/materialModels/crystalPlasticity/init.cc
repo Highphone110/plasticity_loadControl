@@ -17,6 +17,27 @@ void crystalPlasticity<dim>::init(unsigned int num_quad_points)
   local_stress=0.0;
   global_strain=0.0;
   global_stress=0.0;
+
+  // TestCauchyStress.reinit(dim,dim);
+  // TestCauchyStress = 0.0;
+
+  //----local---xhf
+  local_strain_eqv = 0.0;	// eqv-strain
+  local_stress_eqv = 0.0;	// von-mises
+  local_plastic_strain_eqv = 0.0;	// eqv plastic strain
+  local_Wp_b = 0.0;		// plastic work of backstress
+  local_Wp_f = 0.0;		// plastic work of friction stress
+  local_Wp = 0.0;			// plastic work
+  //--------------
+  //-----global--xhf
+  global_strain_eqv = 0.0;	// eqv-strain
+  global_stress_eqv = 0.0;	// von-mises
+  global_plastic_strain_eqv = 0.0;	// eqv plastic strain
+  global_Wp_b = 0.0;		// plastic work of backstress
+  global_Wp_f = 0.0;		// plastic work of friction stress
+  global_Wp = 0.0;			// plastic work
+  //--------------
+
   FullMatrix<double> CauchyStress_init(dim,dim), TinterStress_init(dim,dim), TinterStress_diff_init(dim,dim);
   CauchyStress_init=0;
   TinterStress_init = 0 ;
@@ -309,8 +330,8 @@ void crystalPlasticity<dim>::init(unsigned int num_quad_points)
     Fp_iter.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,IdentityMatrix(dim)));
     Fe_iter.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,IdentityMatrix(dim)));
     CauchyStress.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,CauchyStress_init));
-	 TinterStress.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,TinterStress_init));
-	 TinterStress_diff.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,TinterStress_diff_init));
+	  TinterStress.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,TinterStress_init));
+	  TinterStress_diff.resize(num_local_cells,std::vector<FullMatrix<double> >(num_quad_points,TinterStress_diff_init));
     s_alpha_iter.resize(num_local_cells,std::vector<Vector<double> >(num_quad_points,s0_init));
     twinfraction_iter.resize(num_local_cells,std::vector<std::vector<double> >(num_quad_points,twin_init));
     slipfraction_iter.resize(num_local_cells,std::vector<std::vector<double> >(num_quad_points,slip_init));
@@ -319,6 +340,13 @@ void crystalPlasticity<dim>::init(unsigned int num_quad_points)
     twin_ouput.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
     twin_conv.resize(num_local_cells,std::vector<unsigned int>(num_quad_points,0));
     twin_iter.resize(num_local_cells,std::vector<unsigned int>(num_quad_points,0));
+
+    //Resize the vectors of vonmises stress and eqv strain *xhf
+    vonmises_Stress.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
+    eqv_strain.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
+    Wp.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
+    Wp_F.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
+    Wp_B.resize(num_local_cells, std::vector<double>(num_quad_points,0.0));
 
     if (this->userInputs.enableUserMaterialModel){
       stateVar_conv.resize(num_local_cells,std::vector<Vector<double> >(num_quad_points,stateVar_init));

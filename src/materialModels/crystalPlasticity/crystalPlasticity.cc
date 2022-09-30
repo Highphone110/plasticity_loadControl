@@ -16,10 +16,17 @@ P(dim,dim)
     ellipticBVP<dim>::postprocessed_solution_names.push_back("Eqv_stress");
     ellipticBVP<dim>::postprocessed_solution_names.push_back("Eqv_strain");
     ellipticBVP<dim>::postprocessed_solution_names.push_back("Twin");
-    ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var1");
-    ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var2");
-    ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var3");
-    ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var4");
+    // ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var1");
+    // ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var2");
+    // ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var3");
+    // ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var4");
+
+    // show the plastic work of back stress and friction stress *by xhf
+    ellipticBVP<dim>::postprocessed_solution_names.push_back("Plastic_Strain");
+    ellipticBVP<dim>::postprocessed_solution_names.push_back("Wp");
+    ellipticBVP<dim>::postprocessed_solution_names.push_back("Wp_B");
+    ellipticBVP<dim>::postprocessed_solution_names.push_back("Wp_F");
+    
     ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var5");
     ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var6");
     ellipticBVP<dim>::postprocessed_solution_names.push_back("output_Var7");

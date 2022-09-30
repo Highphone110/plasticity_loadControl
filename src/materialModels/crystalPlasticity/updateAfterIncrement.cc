@@ -113,6 +113,16 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 
 				CauchyStress[cellID][q]=T;
 
+				// // *by xhf
+				// if (cellID == 3 && q == 0){
+				// 	printf("cellID is %d\t q is %d\n",cellID,q);
+				// 	for (unsigned int j = 0;j < dim;j++) {
+				// 		for (unsigned int k = 0;k < dim;k++) {
+				// 		printf("CauchyStress%d%d is %f,\t %f.\n",j,k,T[j][k],TestCauchyStress[j][k]); 
+				// 		}
+				// 	}   
+				// }
+
 
 				if (this->userInputs.enableAdvRateDepModel){
 					for(unsigned int i=0; i<dim ; i++){
@@ -147,6 +157,16 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 				eqvstrain = deve.frobenius_norm();
 				eqvstrain = sqrt(2.0 / 3.0)*eqvstrain;
 
+				vonmises_Stress[cellID][q] =  vonmises;
+				eqv_strain[cellID][q] =  eqvstrain;
+				//-----local by xhf
+				local_strain_eqv += eqvstrain*fe_values.JxW(q);	// eqv-strain
+				local_stress_eqv += vonmises*fe_values.JxW(q);	// von-mises
+				local_plastic_strain_eqv += stateVar_conv[cellID][q][61]*fe_values.JxW(q);	// eqv plastic strain
+				local_Wp_b += Wp_B[cellID][q]*fe_values.JxW(q);		// plastic work of backstress
+				local_Wp_f += Wp_F[cellID][q]*fe_values.JxW(q);		// plastic work of friction stress
+				local_Wp += Wp[cellID][q]*fe_values.JxW(q);			// plastic work
+
 				//fill in post processing field values
 				if (!this->userInputs.enableAdvancedTwinModel){
 					twin_ouput[cellID][q]=twin_iter[cellID][q];
@@ -165,10 +185,18 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 					this->postprocessValues(cellID, q, 2, 0) = twin_ouput[cellID][q];
 
 					////////User Defined Variables for visualization outputs (output_Var1 to output_Var24)////////
-					this->postprocessValues(cellID, q, 3, 0) = 0;
-					this->postprocessValues(cellID, q, 4, 0) = 0;
-					this->postprocessValues(cellID, q, 5, 0) = 0;
-					this->postprocessValues(cellID, q, 6, 0) = 0;
+					// this->postprocessValues(cellID, q, 3, 0) = 0;
+					// this->postprocessValues(cellID, q, 4, 0) = 0;
+					// this->postprocessValues(cellID, q, 5, 0) = 0;
+					// this->postprocessValues(cellID, q, 6, 0) = 0;
+
+					////////////Effective Plastic Strain ////////////////
+					this->postprocessValues(cellID, q, 3, 0) = stateVar_conv[cellID][q][61];
+					// plastic work by xhf
+					this->postprocessValues(cellID, q, 4, 0) = Wp[cellID][q];
+					this->postprocessValues(cellID, q, 5, 0) = Wp_B[cellID][q];
+					this->postprocessValues(cellID, q, 6, 0) = Wp_F[cellID][q];
+
 					this->postprocessValues(cellID, q, 7, 0) = 0;
 					this->postprocessValues(cellID, q, 8, 0) = 0;
 					this->postprocessValues(cellID, q, 9, 0) = 0;
@@ -305,47 +333,73 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 							temp.push_back(phase[cellID][q]);
 						}
 
-						temp.push_back(fe_values.JxW(q));
+						// temp.push_back(fe_values.JxW(q));
 
-						temp.push_back(twin_ouput[cellID][q]);
+						// temp.push_back(twin_ouput[cellID][q]);
 
-						temp.push_back(fe_values.get_quadrature_points()[q][0]);
-						temp.push_back(fe_values.get_quadrature_points()[q][1]);
-						temp.push_back(fe_values.get_quadrature_points()[q][2]);
+						// temp.push_back(fe_values.get_quadrature_points()[q][0]);
+						// temp.push_back(fe_values.get_quadrature_points()[q][1]);
+						// temp.push_back(fe_values.get_quadrature_points()[q][2]);
+
+						////////////X,Y,Z (Position of the quadrature point)*by xhf
+						float x = 0.0;
+						float y = 0.0;
+						float z = 0.0;
+						for(unsigned int i = 0; i<num_quad_points; i++){
+							x+= fe_values.get_quadrature_points()[i][0];
+							y+= fe_values.get_quadrature_points()[i][1];
+							z+= fe_values.get_quadrature_points()[i][2];
+						}
+						x = x/num_quad_points;
+						y = y/num_quad_points;
+						z = z/num_quad_points;
+
+						temp.push_back(x);
+					    temp.push_back(y);
+					    temp.push_back(z);
+
+						// output the eqv strain and vonmises stress ***xhf
+						temp.push_back(eqv_strain[cellID][q]);
+						temp.push_back(vonmises_Stress[cellID][q]);
+					    
+						// output the plastic work ***xhf
+						temp.push_back(Wp_F[cellID][q]);	//plastic work of friction stress
+						temp.push_back(Wp_B[cellID][q]);	//plastic work of back stress
+						temp.push_back(Wp[cellID][q]);		//total plastic work
 
 						temp.push_back(rotnew_conv[cellID][q][0]);
 						temp.push_back(rotnew_conv[cellID][q][1]);
 						temp.push_back(rotnew_conv[cellID][q][2]);
 
-						temp.push_back(Fe_conv[cellID][q][0][0]);
-						temp.push_back(Fe_conv[cellID][q][1][1]);
-						temp.push_back(Fe_conv[cellID][q][2][2]);
-						temp.push_back(Fe_conv[cellID][q][0][1]);
-						temp.push_back(Fe_conv[cellID][q][0][2]);
-						temp.push_back(Fe_conv[cellID][q][1][0]);
-						temp.push_back(Fe_conv[cellID][q][1][2]);
-						temp.push_back(Fe_conv[cellID][q][2][0]);
-						temp.push_back(Fe_conv[cellID][q][2][1]);
+						// temp.push_back(Fe_conv[cellID][q][0][0]);
+						// temp.push_back(Fe_conv[cellID][q][1][1]);
+						// temp.push_back(Fe_conv[cellID][q][2][2]);
+						// temp.push_back(Fe_conv[cellID][q][0][1]);
+						// temp.push_back(Fe_conv[cellID][q][0][2]);
+						// temp.push_back(Fe_conv[cellID][q][1][0]);
+						// temp.push_back(Fe_conv[cellID][q][1][2]);
+						// temp.push_back(Fe_conv[cellID][q][2][0]);
+						// temp.push_back(Fe_conv[cellID][q][2][1]);
 
-						temp.push_back(Fp_conv[cellID][q][0][0]);
-						temp.push_back(Fp_conv[cellID][q][1][1]);
-						temp.push_back(Fp_conv[cellID][q][2][2]);
-						temp.push_back(Fp_conv[cellID][q][0][1]);
-						temp.push_back(Fp_conv[cellID][q][0][2]);
-						temp.push_back(Fp_conv[cellID][q][1][0]);
-						temp.push_back(Fp_conv[cellID][q][1][2]);
-						temp.push_back(Fp_conv[cellID][q][2][0]);
-						temp.push_back(Fp_conv[cellID][q][2][1]);
+						// temp.push_back(Fp_conv[cellID][q][0][0]);
+						// temp.push_back(Fp_conv[cellID][q][1][1]);
+						// temp.push_back(Fp_conv[cellID][q][2][2]);
+						// temp.push_back(Fp_conv[cellID][q][0][1]);
+						// temp.push_back(Fp_conv[cellID][q][0][2]);
+						// temp.push_back(Fp_conv[cellID][q][1][0]);
+						// temp.push_back(Fp_conv[cellID][q][1][2]);
+						// temp.push_back(Fp_conv[cellID][q][2][0]);
+						// temp.push_back(Fp_conv[cellID][q][2][1]);
 
-						temp.push_back(CauchyStress[cellID][q][0][0]);
-						temp.push_back(CauchyStress[cellID][q][1][1]);
-						temp.push_back(CauchyStress[cellID][q][2][2]);
-						temp.push_back(CauchyStress[cellID][q][0][1]);
-						temp.push_back(CauchyStress[cellID][q][0][2]);
-						temp.push_back(CauchyStress[cellID][q][1][0]);
-						temp.push_back(CauchyStress[cellID][q][1][2]);
-						temp.push_back(CauchyStress[cellID][q][2][0]);
-						temp.push_back(CauchyStress[cellID][q][2][1]);
+						// temp.push_back(CauchyStress[cellID][q][0][0]);
+						// temp.push_back(CauchyStress[cellID][q][1][1]);
+						// temp.push_back(CauchyStress[cellID][q][2][2]);
+						// temp.push_back(CauchyStress[cellID][q][0][1]);
+						// temp.push_back(CauchyStress[cellID][q][0][2]);
+						// temp.push_back(CauchyStress[cellID][q][1][0]);
+						// temp.push_back(CauchyStress[cellID][q][1][2]);
+						// temp.push_back(CauchyStress[cellID][q][2][0]);
+						// temp.push_back(CauchyStress[cellID][q][2][1]);
 
 						if (this->userInputs.enableAdvRateDepModel){
 							temp.push_back(TinterStress[cellID][q][0][0]);
@@ -369,98 +423,98 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 							temp.push_back(TinterStress_diff[cellID][q][2][1]);
 						}
 
-						temp.push_back(slipfraction_conv[cellID][q][0]);
-						temp.push_back(slipfraction_conv[cellID][q][1]);
-						temp.push_back(slipfraction_conv[cellID][q][2]);
-						temp.push_back(slipfraction_conv[cellID][q][3]);
-						temp.push_back(slipfraction_conv[cellID][q][4]);
-						temp.push_back(slipfraction_conv[cellID][q][5]);
-						temp.push_back(slipfraction_conv[cellID][q][6]);
-						temp.push_back(slipfraction_conv[cellID][q][7]);
-						temp.push_back(slipfraction_conv[cellID][q][8]);
-						temp.push_back(slipfraction_conv[cellID][q][9]);
-						temp.push_back(slipfraction_conv[cellID][q][10]);
-						temp.push_back(slipfraction_conv[cellID][q][11]);
-						temp.push_back(slipfraction_conv[cellID][q][12]);
-						temp.push_back(slipfraction_conv[cellID][q][13]);
-						temp.push_back(slipfraction_conv[cellID][q][14]);
-						temp.push_back(slipfraction_conv[cellID][q][15]);
-						temp.push_back(slipfraction_conv[cellID][q][16]);
-						temp.push_back(slipfraction_conv[cellID][q][17]);
-						temp.push_back(slipfraction_conv[cellID][q][18]);
-						temp.push_back(slipfraction_conv[cellID][q][19]);
-						temp.push_back(slipfraction_conv[cellID][q][20]);
-						temp.push_back(slipfraction_conv[cellID][q][21]);
-						temp.push_back(slipfraction_conv[cellID][q][22]);
-						temp.push_back(slipfraction_conv[cellID][q][23]);
-						temp.push_back(slipfraction_conv[cellID][q][24]);
-						temp.push_back(slipfraction_conv[cellID][q][25]);
-						temp.push_back(slipfraction_conv[cellID][q][26]);
-						temp.push_back(slipfraction_conv[cellID][q][27]);
-						temp.push_back(slipfraction_conv[cellID][q][28]);
-						temp.push_back(slipfraction_conv[cellID][q][29]);
-						temp.push_back(slipfraction_conv[cellID][q][30]);
-						temp.push_back(slipfraction_conv[cellID][q][31]);
-						temp.push_back(slipfraction_conv[cellID][q][32]);
-						temp.push_back(slipfraction_conv[cellID][q][33]);
-						temp.push_back(slipfraction_conv[cellID][q][34]);
-						temp.push_back(slipfraction_conv[cellID][q][35]);
-						temp.push_back(slipfraction_conv[cellID][q][36]);
-						temp.push_back(slipfraction_conv[cellID][q][37]);
-						temp.push_back(slipfraction_conv[cellID][q][38]);
-						temp.push_back(slipfraction_conv[cellID][q][39]);
-						temp.push_back(slipfraction_conv[cellID][q][40]);
-						temp.push_back(slipfraction_conv[cellID][q][41]);
-						temp.push_back(slipfraction_conv[cellID][q][42]);
-						temp.push_back(slipfraction_conv[cellID][q][43]);
-						temp.push_back(slipfraction_conv[cellID][q][44]);
-						temp.push_back(slipfraction_conv[cellID][q][45]);
-						temp.push_back(slipfraction_conv[cellID][q][46]);
-						temp.push_back(slipfraction_conv[cellID][q][47]);
-						temp.push_back(slipfraction_conv[cellID][q][48]);
-						temp.push_back(slipfraction_conv[cellID][q][49]);
-						temp.push_back(slipfraction_conv[cellID][q][50]);
-						temp.push_back(slipfraction_conv[cellID][q][51]);
-						temp.push_back(slipfraction_conv[cellID][q][52]);
-						temp.push_back(slipfraction_conv[cellID][q][53]);
-						temp.push_back(slipfraction_conv[cellID][q][54]);
-						temp.push_back(slipfraction_conv[cellID][q][55]);
-						temp.push_back(slipfraction_conv[cellID][q][56]);
-						temp.push_back(slipfraction_conv[cellID][q][57]);
-						temp.push_back(slipfraction_conv[cellID][q][58]);
-						temp.push_back(slipfraction_conv[cellID][q][59]);
-						temp.push_back(slipfraction_conv[cellID][q][60]);
-						temp.push_back(slipfraction_conv[cellID][q][61]);
-						temp.push_back(slipfraction_conv[cellID][q][62]);
-						temp.push_back(slipfraction_conv[cellID][q][63]);
-						temp.push_back(slipfraction_conv[cellID][q][64]);
-						temp.push_back(slipfraction_conv[cellID][q][65]);
-						temp.push_back(slipfraction_conv[cellID][q][66]);
-						temp.push_back(slipfraction_conv[cellID][q][67]);
-						temp.push_back(slipfraction_conv[cellID][q][68]);
-						temp.push_back(slipfraction_conv[cellID][q][69]);
-						temp.push_back(slipfraction_conv[cellID][q][70]);
-						temp.push_back(slipfraction_conv[cellID][q][71]);
-						temp.push_back(slipfraction_conv[cellID][q][72]);
-						temp.push_back(slipfraction_conv[cellID][q][73]);
-						temp.push_back(slipfraction_conv[cellID][q][74]);
-						temp.push_back(slipfraction_conv[cellID][q][75]);
-						temp.push_back(slipfraction_conv[cellID][q][76]);
-						temp.push_back(slipfraction_conv[cellID][q][77]);
-						temp.push_back(slipfraction_conv[cellID][q][78]);
-						temp.push_back(slipfraction_conv[cellID][q][79]);
-						temp.push_back(slipfraction_conv[cellID][q][80]);
-						temp.push_back(slipfraction_conv[cellID][q][81]);
-						temp.push_back(slipfraction_conv[cellID][q][82]);
-						temp.push_back(slipfraction_conv[cellID][q][83]);
+						// temp.push_back(slipfraction_conv[cellID][q][0]);
+						// temp.push_back(slipfraction_conv[cellID][q][1]);
+						// temp.push_back(slipfraction_conv[cellID][q][2]);
+						// temp.push_back(slipfraction_conv[cellID][q][3]);
+						// temp.push_back(slipfraction_conv[cellID][q][4]);
+						// temp.push_back(slipfraction_conv[cellID][q][5]);
+						// temp.push_back(slipfraction_conv[cellID][q][6]);
+						// temp.push_back(slipfraction_conv[cellID][q][7]);
+						// temp.push_back(slipfraction_conv[cellID][q][8]);
+						// temp.push_back(slipfraction_conv[cellID][q][9]);
+						// temp.push_back(slipfraction_conv[cellID][q][10]);
+						// temp.push_back(slipfraction_conv[cellID][q][11]);
+						// temp.push_back(slipfraction_conv[cellID][q][12]);
+						// temp.push_back(slipfraction_conv[cellID][q][13]);
+						// temp.push_back(slipfraction_conv[cellID][q][14]);
+						// temp.push_back(slipfraction_conv[cellID][q][15]);
+						// temp.push_back(slipfraction_conv[cellID][q][16]);
+						// temp.push_back(slipfraction_conv[cellID][q][17]);
+						// temp.push_back(slipfraction_conv[cellID][q][18]);
+						// temp.push_back(slipfraction_conv[cellID][q][19]);
+						// temp.push_back(slipfraction_conv[cellID][q][20]);
+						// temp.push_back(slipfraction_conv[cellID][q][21]);
+						// temp.push_back(slipfraction_conv[cellID][q][22]);
+						// temp.push_back(slipfraction_conv[cellID][q][23]);
+						// temp.push_back(slipfraction_conv[cellID][q][24]);
+						// temp.push_back(slipfraction_conv[cellID][q][25]);
+						// temp.push_back(slipfraction_conv[cellID][q][26]);
+						// temp.push_back(slipfraction_conv[cellID][q][27]);
+						// temp.push_back(slipfraction_conv[cellID][q][28]);
+						// temp.push_back(slipfraction_conv[cellID][q][29]);
+						// temp.push_back(slipfraction_conv[cellID][q][30]);
+						// temp.push_back(slipfraction_conv[cellID][q][31]);
+						// temp.push_back(slipfraction_conv[cellID][q][32]);
+						// temp.push_back(slipfraction_conv[cellID][q][33]);
+						// temp.push_back(slipfraction_conv[cellID][q][34]);
+						// temp.push_back(slipfraction_conv[cellID][q][35]);
+						// temp.push_back(slipfraction_conv[cellID][q][36]);
+						// temp.push_back(slipfraction_conv[cellID][q][37]);
+						// temp.push_back(slipfraction_conv[cellID][q][38]);
+						// temp.push_back(slipfraction_conv[cellID][q][39]);
+						// temp.push_back(slipfraction_conv[cellID][q][40]);
+						// temp.push_back(slipfraction_conv[cellID][q][41]);
+						// temp.push_back(slipfraction_conv[cellID][q][42]);
+						// temp.push_back(slipfraction_conv[cellID][q][43]);
+						// temp.push_back(slipfraction_conv[cellID][q][44]);
+						// temp.push_back(slipfraction_conv[cellID][q][45]);
+						// temp.push_back(slipfraction_conv[cellID][q][46]);
+						// temp.push_back(slipfraction_conv[cellID][q][47]);
+						// temp.push_back(slipfraction_conv[cellID][q][48]);
+						// temp.push_back(slipfraction_conv[cellID][q][49]);
+						// temp.push_back(slipfraction_conv[cellID][q][50]);
+						// temp.push_back(slipfraction_conv[cellID][q][51]);
+						// temp.push_back(slipfraction_conv[cellID][q][52]);
+						// temp.push_back(slipfraction_conv[cellID][q][53]);
+						// temp.push_back(slipfraction_conv[cellID][q][54]);
+						// temp.push_back(slipfraction_conv[cellID][q][55]);
+						// temp.push_back(slipfraction_conv[cellID][q][56]);
+						// temp.push_back(slipfraction_conv[cellID][q][57]);
+						// temp.push_back(slipfraction_conv[cellID][q][58]);
+						// temp.push_back(slipfraction_conv[cellID][q][59]);
+						// temp.push_back(slipfraction_conv[cellID][q][60]);
+						// temp.push_back(slipfraction_conv[cellID][q][61]);
+						// temp.push_back(slipfraction_conv[cellID][q][62]);
+						// temp.push_back(slipfraction_conv[cellID][q][63]);
+						// temp.push_back(slipfraction_conv[cellID][q][64]);
+						// temp.push_back(slipfraction_conv[cellID][q][65]);
+						// temp.push_back(slipfraction_conv[cellID][q][66]);
+						// temp.push_back(slipfraction_conv[cellID][q][67]);
+						// temp.push_back(slipfraction_conv[cellID][q][68]);
+						// temp.push_back(slipfraction_conv[cellID][q][69]);
+						// temp.push_back(slipfraction_conv[cellID][q][70]);
+						// temp.push_back(slipfraction_conv[cellID][q][71]);
+						// temp.push_back(slipfraction_conv[cellID][q][72]);
+						// temp.push_back(slipfraction_conv[cellID][q][73]);
+						// temp.push_back(slipfraction_conv[cellID][q][74]);
+						// temp.push_back(slipfraction_conv[cellID][q][75]);
+						// temp.push_back(slipfraction_conv[cellID][q][76]);
+						// temp.push_back(slipfraction_conv[cellID][q][77]);
+						// temp.push_back(slipfraction_conv[cellID][q][78]);
+						// temp.push_back(slipfraction_conv[cellID][q][79]);
+						// temp.push_back(slipfraction_conv[cellID][q][80]);
+						// temp.push_back(slipfraction_conv[cellID][q][81]);
+						// temp.push_back(slipfraction_conv[cellID][q][82]);
+						// temp.push_back(slipfraction_conv[cellID][q][83]);
 
 
-						temp.push_back(twinfraction_conv[cellID][q][0]);
-						temp.push_back(twinfraction_conv[cellID][q][1]);
-						temp.push_back(twinfraction_conv[cellID][q][2]);
-						temp.push_back(twinfraction_conv[cellID][q][3]);
-						temp.push_back(twinfraction_conv[cellID][q][4]);
-						temp.push_back(twinfraction_conv[cellID][q][5]);
+						// temp.push_back(twinfraction_conv[cellID][q][0]);
+						// temp.push_back(twinfraction_conv[cellID][q][1]);
+						// temp.push_back(twinfraction_conv[cellID][q][2]);
+						// temp.push_back(twinfraction_conv[cellID][q][3]);
+						// temp.push_back(twinfraction_conv[cellID][q][4]);
+						// temp.push_back(twinfraction_conv[cellID][q][5]);
 
 						if (this->userInputs.enableAdvancedTwinModel){
 							temp.push_back(TwinOutputfraction_conv[cellID][q][0]);
@@ -490,32 +544,34 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 						}
 
 						if (this->userInputs.enableUserMaterialModel){
-							temp.push_back(stateVar_conv[cellID][q][0]);
-							temp.push_back(stateVar_conv[cellID][q][1]);
-							temp.push_back(stateVar_conv[cellID][q][2]);
-							temp.push_back(stateVar_conv[cellID][q][3]);
-							temp.push_back(stateVar_conv[cellID][q][4]);
-							temp.push_back(stateVar_conv[cellID][q][5]);
-							temp.push_back(stateVar_conv[cellID][q][6]);
-							temp.push_back(stateVar_conv[cellID][q][7]);
-							temp.push_back(stateVar_conv[cellID][q][8]);
-							temp.push_back(stateVar_conv[cellID][q][9]);
-							temp.push_back(stateVar_conv[cellID][q][10]);
-							temp.push_back(stateVar_conv[cellID][q][11]);
-							temp.push_back(stateVar_conv[cellID][q][12]);
-							temp.push_back(stateVar_conv[cellID][q][13]);
-							temp.push_back(stateVar_conv[cellID][q][14]);
-							temp.push_back(stateVar_conv[cellID][q][15]);
-							temp.push_back(stateVar_conv[cellID][q][16]);
-							temp.push_back(stateVar_conv[cellID][q][17]);
-							temp.push_back(stateVar_conv[cellID][q][18]);
-							temp.push_back(stateVar_conv[cellID][q][19]);
-							temp.push_back(stateVar_conv[cellID][q][20]);
-							temp.push_back(stateVar_conv[cellID][q][21]);
-							temp.push_back(stateVar_conv[cellID][q][22]);
-							temp.push_back(stateVar_conv[cellID][q][23]);
-							temp.push_back(stateVar_conv[cellID][q][24]);
-							temp.push_back(stateVar_conv[cellID][q][25]);
+							// temp.push_back(stateVar_conv[cellID][q][0]);
+							// temp.push_back(stateVar_conv[cellID][q][1]);
+							// temp.push_back(stateVar_conv[cellID][q][2]);
+							// temp.push_back(stateVar_conv[cellID][q][3]);
+							// temp.push_back(stateVar_conv[cellID][q][4]);
+							// temp.push_back(stateVar_conv[cellID][q][5]);
+							// temp.push_back(stateVar_conv[cellID][q][6]);
+							// temp.push_back(stateVar_conv[cellID][q][7]);
+							// temp.push_back(stateVar_conv[cellID][q][8]);
+							// temp.push_back(stateVar_conv[cellID][q][9]);
+							// temp.push_back(stateVar_conv[cellID][q][10]);
+							// temp.push_back(stateVar_conv[cellID][q][11]);
+							// temp.push_back(stateVar_conv[cellID][q][12]);
+							// temp.push_back(stateVar_conv[cellID][q][13]);
+							// temp.push_back(stateVar_conv[cellID][q][14]);
+							// temp.push_back(stateVar_conv[cellID][q][15]);
+							// temp.push_back(stateVar_conv[cellID][q][16]);
+							// temp.push_back(stateVar_conv[cellID][q][17]);
+							// temp.push_back(stateVar_conv[cellID][q][18]);
+							// temp.push_back(stateVar_conv[cellID][q][19]);
+							// temp.push_back(stateVar_conv[cellID][q][20]);
+							// temp.push_back(stateVar_conv[cellID][q][21]);
+							// temp.push_back(stateVar_conv[cellID][q][22]);
+							// temp.push_back(stateVar_conv[cellID][q][23]);
+							// temp.push_back(stateVar_conv[cellID][q][24]);
+							// temp.push_back(stateVar_conv[cellID][q][25]);
+
+				////////////Plastic slip shear (Gamma) for each slip system. In the case of FCC, 12 values ////////////////
 							temp.push_back(stateVar_conv[cellID][q][26]);
 							temp.push_back(stateVar_conv[cellID][q][27]);
 							temp.push_back(stateVar_conv[cellID][q][28]);
@@ -528,19 +584,33 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 							temp.push_back(stateVar_conv[cellID][q][35]);
 							temp.push_back(stateVar_conv[cellID][q][36]);
 							temp.push_back(stateVar_conv[cellID][q][37]);
-							temp.push_back(stateVar_conv[cellID][q][38]);
-							temp.push_back(stateVar_conv[cellID][q][39]);
-							temp.push_back(stateVar_conv[cellID][q][40]);
-							temp.push_back(stateVar_conv[cellID][q][41]);
-							temp.push_back(stateVar_conv[cellID][q][42]);
-							temp.push_back(stateVar_conv[cellID][q][43]);
-							temp.push_back(stateVar_conv[cellID][q][44]);
-							temp.push_back(stateVar_conv[cellID][q][45]);
-							temp.push_back(stateVar_conv[cellID][q][46]);
-							temp.push_back(stateVar_conv[cellID][q][47]);
-							temp.push_back(stateVar_conv[cellID][q][48]);
-							temp.push_back(stateVar_conv[cellID][q][49]);
-							temp.push_back(stateVar_conv[cellID][q][50]);
+				////////////Normal stress for each slip system. In the case of FCC, 12 values ////////////////			
+							// temp.push_back(stateVar_conv[cellID][q][38]);
+							// temp.push_back(stateVar_conv[cellID][q][39]);
+							// temp.push_back(stateVar_conv[cellID][q][40]);
+							// temp.push_back(stateVar_conv[cellID][q][41]);
+							// temp.push_back(stateVar_conv[cellID][q][42]);
+							// temp.push_back(stateVar_conv[cellID][q][43]);
+							// temp.push_back(stateVar_conv[cellID][q][44]);
+							// temp.push_back(stateVar_conv[cellID][q][45]);
+							// temp.push_back(stateVar_conv[cellID][q][46]);
+							// temp.push_back(stateVar_conv[cellID][q][47]);
+							// temp.push_back(stateVar_conv[cellID][q][48]);
+							// temp.push_back(stateVar_conv[cellID][q][49]);
+							// temp.push_back(stateVar_conv[cellID][q][50]);
+				////////////Nine components of Plastic strain Tensor (Ep11, Ep12,Ep13,Ep21,Ep22,Ep23,Ep31,Ep32,Ep33) ////////////////
+							// temp.push_back(stateVar_conv[cellID][q][52]);
+							// temp.push_back(stateVar_conv[cellID][q][53]);
+							// temp.push_back(stateVar_conv[cellID][q][54]);
+							// temp.push_back(stateVar_conv[cellID][q][55]);
+							// temp.push_back(stateVar_conv[cellID][q][56]);
+							// temp.push_back(stateVar_conv[cellID][q][57]);
+							// temp.push_back(stateVar_conv[cellID][q][58]);
+							// temp.push_back(stateVar_conv[cellID][q][59]);
+							// temp.push_back(stateVar_conv[cellID][q][60]);
+
+							////////////Effective Plastic Strain ////////////////
+							temp.push_back(stateVar_conv[cellID][q][61]);
 						}
 
 						addToQuadratureOutput(temp);
@@ -670,6 +740,14 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 		F_e=0;F_r=0;F_s=0;
 	}
 
+	// calculate additional variables by xhf
+	double global_strain_eqv = Utilities::MPI::sum(local_strain_eqv/microvol,this->mpi_communicator);
+	double global_stress_eqv = Utilities::MPI::sum(local_stress_eqv/microvol,this->mpi_communicator);
+	double global_plastic_strain_eqv = Utilities::MPI::sum(local_plastic_strain_eqv/microvol,this->mpi_communicator);
+	double global_Wp_b = Utilities::MPI::sum(local_Wp_b/microvol,this->mpi_communicator);
+	double global_Wp_f = Utilities::MPI::sum(local_Wp_f/microvol,this->mpi_communicator);
+	double global_Wp = Utilities::MPI::sum(local_Wp/microvol,this->mpi_communicator);
+
 	if (this->userInputs.flagUserDefinedAverageOutput){
 		for(unsigned int i=0;i<this->userInputs.numberUserDefinedAverageOutput;i++){
 			userDefinedAverageOutput(i)=Utilities::MPI::sum(local_userDefinedAverageOutput(i),this->mpi_communicator)/microvol;
@@ -686,7 +764,10 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 
 		if(this->currentIncrement==0){
 			outputFile.open(dir.c_str());
-			outputFile << "Exx"<<'\t'<<"Eyy"<<'\t'<<"Ezz"<<'\t'<<"Eyz"<<'\t'<<"Exz"<<'\t'<<"Exy"<<'\t'<<"Txx"<<'\t'<<"Tyy"<<'\t'<<"Tzz"<<'\t'<<"Tyz"<<'\t'<<"Txz"<<'\t'<<"Txy"<<'\t'<<"TwinRealVF"<<'\t'<<"TwinMade"<<'\t'<<"SlipTotal";
+			outputFile << "Exx"<<'\t'<<"Eyy"<<'\t'<<"Ezz"<<'\t'<<"Eyz"<<'\t'<<"Exz"<<'\t'<<"Exy"<<'\t'
+						<<"Txx"<<'\t'<<"Tyy"<<'\t'<<"Tzz"<<'\t'<<"Tyz"<<'\t'<<"Txz"<<'\t'<<"Txy"<<'\t'
+						<<"strain_eqv"<<'\t'<<"plastic_strain_eqv"<<'\t'<<"stress_eqv"<<'\t'<<"Wp_f"<<'\t'<<"Wp_b"<<'\t'<<"Wp"<<'\t'
+						<<"TwinRealVF"<<'\t'<<"TwinMade"<<'\t'<<"SlipTotal";
 			if (this->userInputs.flagUserDefinedAverageOutput){
 				for(unsigned int i=0;i<this->userInputs.numberUserDefinedAverageOutput;i++){
 					outputFile <<'\t'<<"userDefined"<<i;
@@ -696,7 +777,10 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 			outputFile.close();
 		}
 		outputFile.open(dir.c_str(),std::fstream::app);
-		outputFile << global_strain[0][0]<<'\t'<<global_strain[1][1]<<'\t'<<global_strain[2][2]<<'\t'<<global_strain[1][2]<<'\t'<<global_strain[0][2]<<'\t'<<global_strain[0][1]<<'\t'<<global_stress[0][0]<<'\t'<<global_stress[1][1]<<'\t'<<global_stress[2][2]<<'\t'<<global_stress[1][2]<<'\t'<<global_stress[0][2]<<'\t'<<global_stress[0][1]<<'\t'<<F_r<<'\t'<<F_e<<'\t'<<F_s;
+		outputFile << global_strain[0][0]<<'\t'<<global_strain[1][1]<<'\t'<<global_strain[2][2]<<'\t'<<global_strain[1][2]<<'\t'<<global_strain[0][2]<<'\t'<<global_strain[0][1]<<'\t'
+					<<global_stress[0][0]<<'\t'<<global_stress[1][1]<<'\t'<<global_stress[2][2]<<'\t'<<global_stress[1][2]<<'\t'<<global_stress[0][2]<<'\t'<<global_stress[0][1]<<'\t'
+					<<global_strain_eqv<<'\t'<<global_plastic_strain_eqv<<'\t'<<global_stress_eqv<<'\t'<<global_Wp_f<<'\t'<<global_Wp_b<<'\t'<<global_Wp<<'\t'
+					<<F_r<<'\t'<<F_e<<'\t'<<F_s;
 		if (this->userInputs.flagUserDefinedAverageOutput){
 			for(unsigned int i=0;i<this->userInputs.numberUserDefinedAverageOutput;i++){
 				outputFile <<'\t'<<userDefinedAverageOutput(i);
