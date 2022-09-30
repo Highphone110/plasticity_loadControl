@@ -51,10 +51,10 @@ set Write Output                                 = true
 
 # Output Directory
 # Need to create directory before using this. Will be corrected in future versions of the software
-set Output Directory                             = results_03
+set Output Directory                             = results_04
 
 # Skip Output Steps
-set Skip Output Steps                            = 20
+set Skip Output Steps                            = 2
 
 # Output Equivalent strain
 set Output Equivalent strain                     = true
@@ -69,7 +69,7 @@ set Output Grain ID                              = true
 set Output Twin fractions                        = false
 
 # GrainAverage output feature
-set Write Grain Averaged Output                 = true
+set Write Grain Averaged Output                 = false
 set Skip Grain Averaged Output Steps            = 20
 set Number of Grain Averaged Output Variables   = 7
 
@@ -80,7 +80,7 @@ set Number of Grain Averaged Output Variables   = 7
 # set Output Variable 4 = true     # plastic work of friction stress
 
 # Flag to write quadrature output
-set Write Quadrature Output = true
+set Write Quadrature Output = false
 
 # Flag for Tabular Time output
 set Skip Quadrature Output Steps                 = 50
