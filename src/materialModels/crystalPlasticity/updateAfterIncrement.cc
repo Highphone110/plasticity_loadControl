@@ -8,6 +8,14 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 	local_F_r=0.0;
 	local_F_s=0.0;
 	local_F_e = 0.0;
+	// * by xhf
+	local_strain_eqv =0.0;	// eqv-strain
+	local_stress_eqv =0.0;	// von-mises
+	local_plastic_strain_eqv =0.0;	// eqv plastic strain
+	local_Wp_b =0.0;		// plastic work of backstress
+	local_Wp_f =0.0;		// plastic work of friction stress
+	local_Wp =0.0;			// plastic work
+
 	unsigned int CheckBufferRegion,dimBuffer;
 	double lowerBuffer,upperBuffer;
 	Point<dim> pnt2;
@@ -741,12 +749,12 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 	}
 
 	// calculate additional variables by xhf
-	double global_strain_eqv = Utilities::MPI::sum(local_strain_eqv/microvol,this->mpi_communicator);
-	double global_stress_eqv = Utilities::MPI::sum(local_stress_eqv/microvol,this->mpi_communicator);
-	double global_plastic_strain_eqv = Utilities::MPI::sum(local_plastic_strain_eqv/microvol,this->mpi_communicator);
-	double global_Wp_b = Utilities::MPI::sum(local_Wp_b/microvol,this->mpi_communicator);
-	double global_Wp_f = Utilities::MPI::sum(local_Wp_f/microvol,this->mpi_communicator);
-	double global_Wp = Utilities::MPI::sum(local_Wp/microvol,this->mpi_communicator);
+	double global_strain_eqv = Utilities::MPI::sum(local_strain_eqv,this->mpi_communicator)/microvol;
+	double global_stress_eqv = Utilities::MPI::sum(local_stress_eqv,this->mpi_communicator)/microvol;
+	double global_plastic_strain_eqv = Utilities::MPI::sum(local_plastic_strain_eqv,this->mpi_communicator)/microvol;
+	double global_Wp_b = Utilities::MPI::sum(local_Wp_b,this->mpi_communicator)/microvol;
+	double global_Wp_f = Utilities::MPI::sum(local_Wp_f,this->mpi_communicator)/microvol;
+	double global_Wp = Utilities::MPI::sum(local_Wp,this->mpi_communicator)/microvol;
 
 	if (this->userInputs.flagUserDefinedAverageOutput){
 		for(unsigned int i=0;i<this->userInputs.numberUserDefinedAverageOutput;i++){
