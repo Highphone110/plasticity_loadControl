@@ -589,7 +589,7 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 					if (CheckBufferRegion==1) {
 						grainID=cellOrientationMap[cellID]-1;
 
-						//loop over quadrature points
+						//loop over quadrature points 
 						for (unsigned int q=0; q<num_quad_points; ++q){
 							std::vector<double> temp;
 
@@ -604,7 +604,7 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 
 							if (temp.size()!=numberOfGrainAverageDataOutput){
 								this->pcout << "The size of numberOfGrainAverageDataOutput defined in prm.prm is not correct\n";
-				      	exit(1);
+				      			exit(1);
 							}
 
 							for (unsigned int i=0;i<numberOfGrainAverageDataOutput;i++){

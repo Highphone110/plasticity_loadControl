@@ -1,0 +1,10 @@
+*** Parameters for the microstructures in this simulation folder ***
+
+Directory:  G:\PRISMS-Fatigue_data_fixed\FreeSurface_Effect_Al7075T6\cubic_equiaxed_free_surface 
+Size (mm) in the X, Y, and Z:  0.0725, 0.0725, 0.0725
+Shape in the X, Y, and Z:  29, 29, 29
+Elements per sub-band:  8 
+Number of element band thickness:  1 
+Number of slip planes for banding:  4 
+Face boundary conditions in X, Y, and Z:  periodic, free, periodic 
+Number of microstructure instantiations generated:  30

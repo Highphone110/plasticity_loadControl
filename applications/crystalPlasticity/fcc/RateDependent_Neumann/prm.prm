@@ -1,4 +1,5 @@
-# Listing of Parameters
+# Listing of Parameters 
+# RateDependent Neumann
 # ---------------------
 
 ####################################
@@ -38,7 +39,7 @@ set Subdivisions Y                               = 1
 set Subdivisions Z                               = 1
 
 # The number of initial refinements of the coarse mesh.
-set Refine factor                                = 3
+set Refine factor                                = 5
 # Only written for serial runs and if number of elements < 10000
 set Write Mesh To EPS                            = false
 
@@ -46,14 +47,14 @@ set Write Mesh To EPS                            = false
 # Solver output parameters
 ####################################
 # Flag to write output vtu and pvtu files
-set Write Output                                 = false
+set Write Output                                 = true
 
 # Output Directory
 # Need to create directory before using this. Will be corrected in future versions of the software
-set Output Directory                             = results
+set Output Directory                             = results_03
 
 # Skip Output Steps
-set Skip Output Steps                            = 1
+set Skip Output Steps                            = 20
 
 # Output Equivalent strain
 set Output Equivalent strain                     = true
@@ -66,6 +67,23 @@ set Output Grain ID                              = true
 
 # Output Twin fractions
 set Output Twin fractions                        = false
+
+# GrainAverage output feature
+set Write Grain Averaged Output                 = true
+set Skip Grain Averaged Output Steps            = 20
+set Number of Grain Averaged Output Variables   = 7
+
+# Output plastic work of back stress and friction stress 
+# set Output Variable 1 = true     # Effective Plastic Strain
+# set Output Variable 2 = true     # plastic work
+# set Output Variable 3 = true     # plastic work of back stress
+# set Output Variable 4 = true     # plastic work of friction stress
+
+# Flag to write quadrature output
+set Write Quadrature Output = true
+
+# Flag for Tabular Time output
+set Skip Quadrature Output Steps                 = 50
 
 ####################################
 # Boundary condition information
@@ -81,14 +99,14 @@ set Number of boundary conditions                = 3
 
 set Use Neumann BCs = true
 set Tabular Neumann Boundary condition filename = NeumannBCs.txt
-set Number of time data for Tabular Neumann BCs = 3
+set Number of time data for Tabular Neumann BCs = 4
 set Number of tabular Neumann boundary conditions = 1
 # Boundary IDs following the displacement IDs convention presented in documentation.
 set Boundary IDs of Neumann BCs = 2
 
 # DOF that the load is applied, here 0 means along x.
 set dof of Neumann BCs = 0
-set Tabular Time Neumann BCs = 0,0.05,0.1
+set Tabular Time Neumann BCs = 0,0.5,1.5,2
 
 
 ####################################
@@ -98,13 +116,13 @@ set Tabular Time Neumann BCs = 0,0.05,0.1
 set Time increments                              = 0.005
 
 #Total simulation time
-set Total time                                   = 0.1
+set Total time                                   = 2
 
 # Maximum iterations for linear solver
-set Maximum linear solver iterations             = 50000
+set Maximum linear solver iterations             = 10000
 
 # Relative linear solver tolerance
-set Relative linear solver tolerance             = 1.0e-10
+set Relative linear solver tolerance             = 1.0e-8
 
 # Maximum no. of non-linear iterations
 set Maximum non linear iterations                = 4
@@ -112,36 +130,54 @@ set Maximum non linear iterations                = 4
 ####################################
 # Elasticity parameters
 ####################################
+# Al aloy
+# Flag to indicate if User Material Model is enabled
+set Enable User Material Model                   = true
+
+# Flag to indicate if User Material Model is enabled Phase 1
+set Enable User Material Model 1                  = true
+
+# Number of User Material Constants in a Material model Phase 1
+set Number of User Material Constants 1              = 13
+
+# Number of User Material State Variables in a Material model Phase 1
+set Number of User Material State Variables 1        = 62
+
+# Material Constants in a Material model Phase 1
+set User Material Constants 1             = 1.0e-3, 0.0133333333333333333 , 1.0e-6 , 1.0e-6 ,  100 , 100,  2.0e6, 1.35e5, 2.0e4, 1421.0 , 70.0, 70.0
+
+# Material State Variables in a Material model Phase 1
+set User Material State Variables Initial Values 1        = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 #   Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 1                      = 170.0e3, 124.0e3, 124.0e3, 0, 0, 0
+set Elastic Stiffness row 1                      = 107.30e3, 60.90e3, 60.90e3, 0, 0, 0
 
 # 	Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 2                      = 124.0e3, 170.0e3, 124.0e3, 0, 0, 0
+set Elastic Stiffness row 2                      = 60.90e3, 107.30e3, 60.90e3, 0, 0, 0
 
 # 	Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 3                      = 124.0e3, 124.0e3, 170.0e3, 0, 0, 0
+set Elastic Stiffness row 3                      = 60.90e3, 60.90e3, 107.30e3, 0, 0, 0
 
 # 	Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 4                      = 0, 0, 0, 75.0e3, 0, 0
+set Elastic Stiffness row 4                      = 0, 0, 0, 28.30e3, 0, 0
 
 # 	Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 5                      = 0, 0, 0, 0, 75.0e3, 0
+set Elastic Stiffness row 5                      = 0, 0, 0, 0, 28.30e3, 0
 
 # 	Elastic Stiffness Matrix -Voigt Notation (MPa)
-set Elastic Stiffness row 6                      = 0, 0, 0, 0, 0, 75.0e3
+set Elastic Stiffness row 6                      = 0, 0, 0, 0, 0, 28.30e3
 
 ####################################
 # Slip parameters
 ####################################
 # Number of Slip Systems
-set Number of Slip Systems                       = 12 
+set Number of Slip Systems                       = 12
 
 # Latent Hardening Ratio
 set Latent Hardening Ratio filename                       = LatentHardeningRatio.txt
 
 # RSS of the slip sytems
-set Initial Slip Resistance                      = 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0
+set Initial Slip Resistance                      = 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0, 35.0
 
 # Heardening moduli of slip systems
 set Initial Hardening Modulus                    = 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0, 180.0
@@ -150,7 +186,7 @@ set Initial Hardening Modulus                    = 180.0, 180.0, 180.0, 180.0, 1
 set Power Law Exponent                           = 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25, 2.25
 
 # Saturation stress
-set Saturation Stress                            = 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0, 148.0
+set Saturation Stress                            = 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0
 
 # Slip Directions File
 set Slip Directions File                         = slipDirections.txt
