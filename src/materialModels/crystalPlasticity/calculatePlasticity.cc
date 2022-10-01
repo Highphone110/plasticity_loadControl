@@ -1,5 +1,6 @@
 #include "../../../include/crystalPlasticity.h"
 #include "userFunctions.cc"
+#include "MatSolution.cc"
 //////////////////////////////////////////////////////////////////////////
 //////calculatePlasticity.cc numerically integrates the constitive model.
 //////This calculatePlasticity.cc is based on the following rate-dependent crystal plasticity model:
@@ -1169,7 +1170,45 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
     stateVar_iter[cellID][quadPtID][dim*dim+4*n_Tslip_systems]=Ep_eff_cum_tau;
 
 
-    // // calculate the cauchy stress form resolved shear stress *by xhf
+    // calculate the cauchy stress form resolved shear stress *by xhf
+    if(cellID == 3 && quadPtID == 0){
+
+      Mat_x a;  // Solution of multivariate linear equation
+
+      for (unsigned int i = 0;i<6;i++){
+        temp7=0.0;
+        for (unsigned int j = 0;j < dim;j++) {
+          for (unsigned int k = 0;k < dim;k++) {
+            temp7[j][k]=SCHMID_TENSOR1[dim*i + j][k];
+          }
+        }
+        unsigned int ii = 0;
+        for(unsigned int j = 0; j < dim; j++){
+          for(unsigned int k = j; k < dim; k++){
+            a.m[i][ii] = temp7[j][k] + temp7[k][j];
+            if (k == j){
+              a.m[i][ii] = a.m[i][ii]*0.5;
+            }
+            ii++;
+          }
+        }
+
+        a.m[i][6] = resolved_shear_tau(i);
+      }
+
+      a.solve();
+      // a.Cout();
+
+      unsigned int i = 0;
+      for(unsigned int j = 0; j < dim; j++){
+        for(unsigned int k = j; k < dim; k++){
+          TestCauchyStress[j][k] = a.s[i];
+          // TestCauchyStress[k][j] = TestCauchyStress[j][k];
+          i++;
+        }
+      }
+    }
+
     // if(cellID == 3 && quadPtID == 0){
     //   TestCauchyStress = 0.0;
 

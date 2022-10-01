@@ -121,15 +121,15 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 
 				CauchyStress[cellID][q]=T;
 
-				// // *by xhf
-				// if (cellID == 3 && q == 0){
-				// 	printf("cellID is %d\t q is %d\n",cellID,q);
-				// 	for (unsigned int j = 0;j < dim;j++) {
-				// 		for (unsigned int k = 0;k < dim;k++) {
-				// 		printf("CauchyStress%d%d is %f,\t %f.\n",j,k,T[j][k],TestCauchyStress[j][k]); 
-				// 		}
-				// 	}   
-				// }
+				// *by xhf
+				if (cellID == 3 && q == 0){
+					printf("cellID is %d\t q is %d\n",cellID,q);
+					for (unsigned int j = 0;j < dim;j++) {
+						for (unsigned int k = j;k < dim;k++) {
+						printf("CauchyStress%d%d is %f,\t %f.\n",j,k,T[j][k],TestCauchyStress[j][k]); 
+						}
+					}   
+				}
 
 
 				if (this->userInputs.enableAdvRateDepModel){

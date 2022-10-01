@@ -51,7 +51,7 @@ set Write Output                                 = true
 
 # Output Directory
 # Need to create directory before using this. Will be corrected in future versions of the software
-set Output Directory                             = results_07
+set Output Directory                             = results_08
 
 # Skip Output Steps
 set Skip Output Steps                            = 20

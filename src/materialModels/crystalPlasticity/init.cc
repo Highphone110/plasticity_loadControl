@@ -18,7 +18,7 @@ void crystalPlasticity<dim>::init(unsigned int num_quad_points)
   global_strain=0.0;
   global_stress=0.0;
 
-  // TestCauchyStress.reinit(dim,dim);
+  TestCauchyStress.reinit(dim,dim);
   // TestCauchyStress = 0.0;
 
   //----local---xhf

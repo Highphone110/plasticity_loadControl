@@ -1,6 +1,5 @@
 #include "../../../include/ellipticBVP.h"
 
-
 void trpose(FullMatrix<double> &Atrpose, FullMatrix<double> elm);
 
 void trpose(FullMatrix<double> &Atrpose, FullMatrix<double> elm) {
@@ -77,5 +76,3 @@ Amat9.reinit(3,3);
 
 
 }
-
-

@@ -200,7 +200,7 @@ public:
               FullMatrix<double> T;
 
               // Cauchy stress from resolve shear stress *by xhf
-              // FullMatrix<double> TestCauchyStress;              
+              FullMatrix<double> TestCauchyStress;              
 
               /**
               * First Piola-Kirchhoff stress
