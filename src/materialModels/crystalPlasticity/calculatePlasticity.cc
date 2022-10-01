@@ -151,6 +151,7 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
       W_kh_t2(i) = stateVar_conv[cellID][quadPtID][i+n_Tslip_systems];
       signed_slip_t(i)=stateVar_conv[cellID][quadPtID][i+2*n_Tslip_systems];
       s_alpha_t(i)=s_alpha_conv[cellID][quadPtID][i];
+      frictionstress_t(i) = s_alpha_conv[cellID][quadPtID][i];  // *by xhf
     }
 
     ii=0;
@@ -416,6 +417,7 @@ void crystalPlasticity<dim>::calculatePlasticity(unsigned int cellID,
             T_star_iter.mTmult(temp2,temp);
             sctmp1=temp2.trace();
             resolved_shear_tau(i) = sctmp1 ;
+            shearStress_t(i) = sctmp1;  // * by xhf 
 
             if(i<n_slip_systems){ // For slip systems due to symmetry of slip
               if((sctmp1-W_kh_tau_it(i))<0)

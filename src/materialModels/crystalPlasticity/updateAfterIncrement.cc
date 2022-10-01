@@ -333,7 +333,9 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 				if (cell->is_locally_owned()){
 					fe_values.reinit(cell);
 					//loop over quadrature points
-					for (unsigned int q=0; q<num_quad_points; ++q){
+					// for (unsigned int q=0; q<num_quad_points; ++q){
+					// set q to a constant 1
+					for (unsigned int q=0; q<1; ++q){
 						std::vector<double> temp;
 						temp.push_back(cellOrientationMap[cellID]);
 
@@ -642,7 +644,7 @@ void crystalPlasticity<dim>::updateAfterIncrement()
 
 			grainAveragaData=0;
 			global_grainAveragaData=0;
-		  unsigned int grainID;
+		  	unsigned int grainID;
 			cell = this->dofHandler.begin_active(), endc = this->dofHandler.end();
 			for (; cell!=endc; ++cell) {
 				if (cell->is_locally_owned()){
